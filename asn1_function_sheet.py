@@ -18,8 +18,34 @@ def age_splitter(df, col_name, age_threshold):
         - df_above_equal: DataFrame with rows where age is above or equal to the threshold.
     """
     pass
+
+def cohenEffectSize(group1, group2):
+    # You need to implement this helper function
+    # This should not be too hard...
+    Group1 = np.array(group1)
+    Group2 = np.array(group2)
     
+    mean1, mean2 = group1.mean(), group2.mean()
+    std1, std2 = group1.std(ddof=1), group2.std(ddof=1)
+    n1, n2 = len(group1), len(group2)
+    
+    pooled_std = np.sqrt(((n1-1)*std1**2 + (n2-1)*std2**2)/(n1+n2-2))
+    
+    return (mean1 - mean2) / pooled_std
+    pass
+
 def effectSizer(df, num_col, cat_col):
+    unique_vals = df[cat_col].dropna().unique()
+    
+    if len(unique_vals) != 2:
+        raise ValueError(f"{cat_col} must have exactly 2 categories")
+    
+    x1, x2 = unique_vals
+    group1 = df[df[cat_col] == x1][num_col].dropna()
+    group2 = df[df[cat_col] == x2][num_col].dropna()
+    
+    d = cohenEffectSize(group1, group2)
+    return {x1: d, x2: -d}
     """
     Calculates the effect sizes of binary categorical classes on a numerical value.
 
@@ -35,9 +61,9 @@ def effectSizer(df, num_col, cat_col):
     """
     pass
 
-def cohenEffectSize(group1, group2):
-    # You need to implement this helper function
-    # This should not be too hard...
+
+
+
     pass
 
 def cohortCompare(df, cohorts, statistics=['mean', 'median', 'std', 'min', 'max']):
@@ -45,6 +71,28 @@ def cohortCompare(df, cohorts, statistics=['mean', 'median', 'std', 'min', 'max'
     This function takes a dataframe and a list of cohort column names, and returns a dictionary
     where each key is a cohort name and each value is an object containing the specified statistics
     """
+    results = {}
+    
+    for col in cohorts:
+        cohort = CohortMetric(cohort_name=col)
+        
+        # Numerical columns
+        if np.issubdtype(df[col].dtype, np.number):
+            cohort.setMean(df[col].mean())
+            cohort.setMedian(df[col].median())
+            cohort.setStd(df[col].std())
+            cohort.setMin(df[col].min())
+            cohort.setMax(df[col].max())
+        
+        # Categorical columns
+        else:
+            counts = df[col].value_counts()
+            # Store counts in the 'mean' field just for printing purposes
+            cohort.setMean(counts)
+        
+        results[col] = cohort
+    
+    return results
     pass
   
 
